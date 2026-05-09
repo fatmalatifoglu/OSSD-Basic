@@ -116,7 +116,7 @@ Expected output on the synthetic benchmark
 | Reconstruction SNR (vs noise-free) | 27.14 dB |
 | CCI (Cascade Coverage Index) | 0.8146 |
 | SSPI (Self-Similarity Preservation) | 0.9858 |
-| SDI (Snowflake Disjointness) | 0.9060 |
+| SDI (delay-axis disjointness) | 0.9060 |
 
 All numbers are deterministic for the fixed RNG seed.
 
