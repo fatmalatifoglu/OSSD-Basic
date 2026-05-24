@@ -27,7 +27,7 @@ function out = ossd_decompose(x, params)
 %   (see ossd_default_params for documentation):
 %
 %       params.fs                       sampling rate (data property)
-%       params.band_thresh_k            MAD multiplier        [default 2.0]
+%       params.band_thresh_k            MAD multiplier        [default 1.5]
 %       params.rank_energy_target       per-band energy target [default 0.93]
 %       params.min_mode_energy_ratio    energy pruning floor   [default 1e-3]
 %       params.n_modes                  output K cap; [] = auto [default []]

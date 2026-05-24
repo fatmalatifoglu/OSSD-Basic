@@ -36,9 +36,7 @@ Three key design elements distinguish OSSD-Basic from existing decompositions:
 ## Requirements
 
 - MATLAB R2018b or newer  
-- No toolbox dependencies for the core decomposition (`ossd_decompose.m`)  
-- Statistics and Machine Learning Toolbox required only for `demo_SPI_forecast_OSSD_Basic.m` 
-- Signal Processing Toolbox required only for `demo_OSSD_compare_classical.m` 
+- No toolbox dependencies for the core decomposition (`ossd_decompose.m`) or the included demo scripts (`demo_OSSD_Basic.m`, `reproduce.m`).
 
 ---
 
@@ -59,17 +57,16 @@ Three key design elements distinguish OSSD-Basic from existing decompositions:
 | `ossd_sspi.m` | Self-Similarity Preservation Index (structural fidelity). |
 | `ossd_sdi.m` | Snowflake Disjointness Index (delay-axis non-collision). |
 
-### Demonstration and reproduction scripts
+### Reproduction
 
 | File | Reproduces |
 |------|-----------|
-| `reproduce.m` | **Single-script runner** — Table 4 (OSSD performance) headline numbers. |
-| `demo_OSSD_Basic.m` | Full synthetic validation: Tables 4 and 5, Figures 3–5. |
-| `demo_OSSD_compare_classical.m` | Cross-method comparison at K = 6: Table 7 (K=6 rows). |
-| `demo_OSSD_compare_K4_K6.m` | Same-K and cross-K comparison: full Table 7. |
-| `demo_SPI_forecast_OSSD_Basic.m` | Hydrological forecasting: Table 10. |
-| `ossd_sensitivity_analysis.m` | Parameter sensitivity: Table SA (Section 2.7). |
-| `ossd_ablation.m` | Pipeline ablation: Table A (Section 2.4). |
+| `reproduce.m` | Table 4 synthetic validation headline numbers (+ MSR auxiliary metric). |
+| `demo_OSSD_Basic.m` | Full synthetic demo with figures (Tables 4–5, Figures 3–5). |
+
+Extended scripts used during manuscript preparation (ablation, sensitivity,
+classical comparison, hydrological forecasting) are **not included in this
+minimal release** and are available upon request.
 
 ---
 
@@ -116,7 +113,7 @@ Expected output on the synthetic benchmark
 | Reconstruction SNR (vs noise-free) | 27.14 dB |
 | CCI (Cascade Coverage Index) | 0.8146 |
 | SSPI (Self-Similarity Preservation) | 0.9858 |
-| SDI (delay-axis disjointness) | 0.9060 |
+| SDI (Snowflake Disjointness) | 0.9060 |
 
 All numbers are deterministic for the fixed RNG seed.
 
@@ -132,7 +129,7 @@ OSSD-Basic runs the following stages in order:
    off the `(window-index, delay)` plane up to `max_tau = 120`.
 3. **Robust normalisation.** Median / MAD per delay column (Eq. 6 in paper).
 4. **Band extraction.** 8-connected components above a robust MAD-based
-   threshold (k = 2.0), with minimum area, time-span, and tau-span constraints.
+   threshold (`band_thresh_k` = 1.5), with minimum area, time-span, and tau-span constraints.
 5. **Adaptive proxy-correlation merge.** Bands sharing the same delay
    structure merge under a relaxed correlation floor (c_min = 0.75);
    bands on different delay axes require near-identical correlation
@@ -140,13 +137,13 @@ OSSD-Basic runs the following stages in order:
 6. **Subspace decomposition.** Per-band mean trajectory + low-rank SVD
    truncation by energy target (rank_energy_target = 0.93).
 7. **Outer pipeline.** Similarity merge → MGS + LS amplitudes →
-   joint refinement → **post-refinement MGS + LS** (reduces OI to near machine precision). 
+   joint refinement → **first MGS + LS re-projection** (reduces OI to near machine precision). 
 8. **Dominant-component cascade.** If CCI ≥ γ = 0.70, the dominant mode
    is subtracted and the pipeline re-runs on the residual to recover
    weaker components. 
 9. **Similarity-aware K-reduction.** Final mode count enforced by merging
    the most similar pair or pruning the lowest-energy column.
-10. **Post-K-reduction MGS + LS.** Restores numerical orthogonality
+10. **Second MGS + LS re-projection (post-K-reduction).** Restores numerical orthogonality
     perturbed by K-reduction. 
 
 Four diagnostic frameworks accompany the algorithm:
@@ -169,13 +166,13 @@ Most users only need to set `fs` and optionally `n_modes`.
 |-----------|-----------------|-------------|
 | `L` | 128 | Hankel window length. Requires L ≥ 1.5 × T_dominant. |
 | `max_tau` | 120 | Max delay on τ-axis. Requires max_tau ≥ T_dominant. |
-| `band_thresh_k` | 2.0 | MAD multiplier for band detection. Primary tuning knob. |
+| `band_thresh_k` | 1.5 | MAD multiplier for band detection. Primary tuning knob. |
 | `rank_energy_target` | 0.93 | Cumulative energy fraction for SVD rank selection. |
 | `const_band_proxy_corr_min` | 0.75 | Merge floor for overlapping bands (c_min). |
 | `const_band_proxy_corr_max` | 0.95 | Merge ceiling for disjoint bands (c_max). |
 | `const_band_tau_overlap_min` | 0.40 | τ-overlap fraction at which c_min applies. |
 | `const_dominant_ratio_for_cascade` | 0.70 | CCI threshold γ for cascade trigger. |
-| `joint_refine_iters` | auto [4, 12] | Refinement iterations before MGS+LS re-projection. |
+| `joint_refine_iters` | auto [4, 12] | Joint refinement iterations between the first and second MGS+LS re-projection steps. |
 | `n_modes` | `[]` (auto) | Target output K. Empty = automatic energy-rank selection. |
 
 Geometric parameters (`L`, `max_tau`, `min_band_area`, …) are derived
@@ -185,28 +182,30 @@ from `N` automatically when not overridden.
 
 ## Ablation study (Table 1)
 
-Run `ossd_ablation` to reproduce the targeted ablation (Section 2.4):
+Reference values from the manuscript (Section 2.4). The ablation script
+(`ossd_ablation.m`) is available upon request.
 
 | Variant | OI | Burst Recovery | Key finding |
 |---------|----|----------------|-------------|
 | V0 Full OSSD-Basic | 3.2×10⁻¹⁴ | 0.559 | Reference |
 | V1 No JointRefine | 3.2×10⁻¹⁴ | 0.559 | No change — MGS+LS provides the primary contribution|
-| V2 No MGS+LS | **0.203** | **0.194** | OI ×6.3M; burst −65% |
+| V2 No MGS+LS | **0.203** | **0.194** | OI ↑ ~12 orders of magnitude; burst −65% |
 | V3 Fixed rank | 7.9×10⁻¹⁴ | 0.364 | Burst −35% |
-| V4 Low k=1.5 | 3.2×10⁻¹⁴ | 0.559 | Robust to threshold |
+| V4 Low k=1.5 | 3.2×10⁻¹⁴ | 0.559 | Same as default (no ablation effect on this benchmark) |
 | V5 No Refine + No MGS | 0.203 | 0.194 | Same as V2 |
 
 ---
 
 ## Sensitivity analysis 
 
-Run `ossd_sensitivity_analysis` to reproduce Section 2.7:
+Reference findings from Section 2.7. The sensitivity script
+(`ossd_sensitivity_analysis.m`) is available upon request.
 
 | Parameter | Range | Key finding |
 |-----------|-------|-------------|
 | L | 64–256 | K=4 only at L=128 and L=256; K=0–2 at intermediate values |
 | tau_max | 60–180 | tau_max < 120 → K=1 (axis too short); tau_max ≥ 120 → K=4 stable |
-| k | 1.5–3.5 | k ≥ 2.5 → K=0 (all bands suppressed) |
+| k | 1.5–3.5 | k = 1.5–2.0 → K = 4 stable; k ≥ 2.5 → K = 0 (all bands suppressed) |
 
 ---
 

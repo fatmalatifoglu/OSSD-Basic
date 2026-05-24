@@ -31,7 +31,7 @@
 % The first part of this script mirrors demo_OSSD_Basic.m; the second
 % part runs MSR (Mode Stability under Resampling) as a separate
 % measurement.  The numbers below should match the manuscript's
-% Table 3 to within numerical precision.
+% Table 4 to within numerical precision.
 
 clear; close all; clc;
 
@@ -63,12 +63,15 @@ fprintf('OSSD-Basic finished in %.3f s.\n', elapsed);
 K = size(out.modes, 2);
 
 % ----------------------------------------------------------------------------
-% (3) Diagnostics + recovery numbers (Table 3 in the manuscript).
+% (3) Diagnostics + recovery numbers (Table 4 in the manuscript).
 % ----------------------------------------------------------------------------
 d = out.diagnostics;
 xhat = sum(out.modes, 2);
 rre = norm(x - xhat) / (norm(x) + eps);
-snr = 20 * log10(norm(x - mean(x)) / (norm(x - xhat) + eps));
+clean_x = gt.c1 + gt.c2 + gt.c3 + gt.c4;
+snr_observed = 20 * log10(norm(x - mean(x)) / (norm(x - xhat) + eps));
+% Table 4 / Table 7 SNR: reconstruction error vs noise-free ground truth.
+snr_clean = 20 * log10(norm(clean_x) / (norm(clean_x - xhat) + eps));
 
 % Inter-mode correlation matrix.
 Cmm = corr(out.modes);
@@ -155,8 +158,6 @@ fprintf('\nComputing MSR over 5 noise resamples ...\n');
 n_seeds = 5;
 msr_scores = nan(n_seeds, K);
 
-clean_x = gt.c1 + gt.c2 + gt.c3 + gt.c4;
-
 for s = 1:n_seeds
     rng('default');
     rng(100 + s, 'twister');
@@ -196,11 +197,12 @@ msr_mean = mean(msr_per_mode, 'omitnan');
 % (6) Print headline table.
 % ----------------------------------------------------------------------------
 fprintf('\n================================================================\n');
-fprintf('  Headline results (manuscript Table 3 + auxiliary metrics)\n');
+fprintf('  Headline results (manuscript Table 4 + auxiliary metrics)\n');
 fprintf('================================================================\n');
 fprintf('  K (number of modes)              = %d\n', K);
 fprintf('  Reconstruction relative error    = %.4f\n', rre);
-fprintf('  Reconstruction SNR (dB)          = %.2f\n', snr);
+fprintf('  SNR vs observed x (dB)           = %.2f\n', snr_observed);
+fprintf('  SNR vs noise-free ground truth   = %.2f dB  (Table 4)\n', snr_clean);
 fprintf('  Orthogonality index              = %.2e\n', d.orthogonality_index);
 fprintf('  Mean inter-mode |corr|           = %.4e\n', mean_corr);
 fprintf('  Max  inter-mode |corr|           = %.4e\n', max_corr);
