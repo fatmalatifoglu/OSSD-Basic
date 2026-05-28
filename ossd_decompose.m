@@ -12,8 +12,8 @@ function out = ossd_decompose(x, params)
 %
 %   References:
 %     [1] F. Latifoğlu, L. Latifoğlu, "Orthogonal Self-Similarity Decomposition (OSSD):
-%         A Delay-Based Framework for Multi-Scale Time Series Analysis with
-%         Hydrological Forecasting Application",
+%         A Delay-Based Framework for Multiscale Time Series Analysis with
+%         Applications in Hydrological Forecasting",
 %         submitted to Fractal and Fractional, 2026.
 %
 %   Copyright (c) 2026 Fatma Latifoğlu, Levent Latifoğlu.
