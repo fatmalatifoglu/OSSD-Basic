@@ -230,7 +230,7 @@ If you use this implementation in academic work, please cite:
 
 > F. Latifoğlu, L. Latifoğlu,  
 > "Orthogonal Self-Similarity Decomposition (OSSD): A Delay-Based Framework  
-> for Multi-Scale Time Series Analysis with Hydrological Forecasting Application",  
+> for Multiscale Time Series Analysis with Applications in Hydrological Forecasting",  
 > *Fractal and Fractional*, 2026.
 
 (DOI and volume/issue will be added in the camera-ready version.)
